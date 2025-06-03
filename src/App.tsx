@@ -1,18 +1,20 @@
-import styles from './App.module.css'
-import Form from './components/Form/Form'
+import styles from "./App.module.css";
+import Form from "./components/Form/Form";
+import useWeather from "./hooks/useWeather";
 
 function App() {
+  const { fetchWeather } = useWeather();
 
   return (
     <>
-     <h1 className={styles.title}>Buscardor de Clima</h1>
+      <h1 className={styles.title}>Buscardor de Clima</h1>
 
-     <div className={styles.container}>
-      <Form/>
-      <p>2</p>
-     </div>
+      <div className={styles.container}>
+        <Form fetchWeahter={fetchWeather} />
+        <p>2</p>
+      </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
