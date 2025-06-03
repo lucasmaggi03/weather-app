@@ -1,6 +1,7 @@
 import axios from "axios";
+import { useState, useMemo } from "react";
 import { z } from "zod";
-import type { SearchType, Weather } from "../types";
+import type { SearchType } from "../types";
 
 // Type Guards
 {
@@ -26,27 +27,69 @@ const Weather = z.object({
   }),
 });
 
-type WeatherZod = z.infer<typeof Weather>;
+export type Weather = z.infer<typeof Weather>;
 
+//valibot
+{
+  /*const WeatherSchema = object({
+    name: string(),
+    main: object({
+        temp: number(),
+        temp_max: number(),
+        temp_min: number()
+    })
+})*/
+}
+
+const initialState = {
+  name: "",
+  main: {
+    temp: 0,
+    temp_max: 0,
+    temp_min: 0,
+  },
+};
 export default function useWeather() {
+  const [weather, setWeather] = useState<Weather>(initialState);
+  const [notFound, setNotFound] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const fetchWeather = async (search: SearchType) => {
     const appId = import.meta.env.VITE_API_KEY;
-
+    setLoading(true);
+    setWeather(initialState);
     try {
       const geoUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${search.city},${search.country}&appid=${appId}`;
       const { data: geoData } = await axios.get(geoUrl);
+      if (!geoData[0]) {
+        setNotFound(true)
+        return;
+      }
       const lat = geoData[0].lat;
       const lon = geoData[0].lon;
+
+      //comprobar si existe la data
+
       const apiCall = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${appId}`;
-      const { data: weatherData } = await axios.get<WeatherZod>(apiCall);
+      const { data: weatherData } = await axios.get(apiCall);
       const result = Weather.safeParse(weatherData);
-      console.log(result.data?.main);
+      if (result.success) {
+        setWeather(result.data);
+      }
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const hasWeatherData = useMemo(() => weather.name, [weather]);
+
   return {
+    hasWeatherData,
+    loading,
+    weather,
     fetchWeather,
+    notFound
   };
 }
